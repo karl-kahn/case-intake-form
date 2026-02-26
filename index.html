@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Case Intake — Discovery Response Automation</title>
+<style>
+  :root {
+    --navy: #1a2744;
+    --slate: #475569;
+    --border: #cbd5e1;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --red: #dc2626;
+    --green: #16a34a;
+    --section-bg: #f1f5f9;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: #1e293b;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+  }
+
+  header {
+    border-bottom: 3px solid var(--navy);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  header h1 {
+    font-size: 1.375rem;
+    color: var(--navy);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  header p {
+    color: var(--slate);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+  }
+
+  /* Top row: case name + date + attorney + paralegal */
+  .top-row {
+    display: grid;
+    grid-template-columns: 1fr 160px;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .top-row-second {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  section {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  section h2 {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  section h2 .num {
+    background: var(--navy);
+    color: var(--white);
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--slate);
+    margin-bottom: 0.25rem;
+  }
+
+  label .hint {
+    font-weight: 400;
+    color: #94a3b8;
+    font-style: italic;
+  }
+
+  input[type="text"],
+  input[type="date"],
+  input[type="number"],
+  select,
+  textarea {
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    color: #1e293b;
+    background: var(--white);
+    transition: border-color 0.15s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  textarea { resize: vertical; min-height: 3.5rem; }
+
+  .field { margin-bottom: 0.875rem; }
+  .field:last-child { margin-bottom: 0; }
+
+  .row {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 0.875rem;
+  }
+  .row:last-child { margin-bottom: 0; }
+
+  .row-2 { grid-template-columns: 1fr 1fr; }
+  .row-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .row-2-1 { grid-template-columns: 2fr 1fr; }
+  .row-1-2 { grid-template-columns: 1fr 2fr; }
+
+  /* Radio/checkbox groups */
+  .option-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .option-group label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-weight: 400;
+    color: #1e293b;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+
+  .option-group input[type="radio"],
+  .option-group input[type="checkbox"] {
+    width: auto;
+    accent-color: var(--accent);
+  }
+
+  /* Yes/No toggle */
+  .yn-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 0.25rem;
+  }
+
+  .yn-group input { display: none; }
+
+  .yn-group label {
+    padding: 0.375rem 1rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--slate);
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    margin-bottom: 0;
+    user-select: none;
+  }
+
+  .yn-group label:last-of-type { border-right: none; }
+  .yn-group input:checked + label { background: var(--navy); color: var(--white); }
+
+  /* Conditional sections */
+  .conditional {
+    background: var(--section-bg);
+    border-left: 3px solid var(--accent);
+    padding: 1rem 1.25rem;
+    margin-top: 0.75rem;
+    border-radius: 0 4px 4px 0;
+    display: none;
+  }
+
+  .conditional.visible { display: block; }
+
+  .conditional label { color: var(--slate); }
+
+  /* Witness table */
+  .witness-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .witness-table th {
+    text-align: left;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--slate);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 2px solid var(--border);
+  }
+
+  .witness-table td {
+    padding: 0.25rem 0.125rem;
+  }
+
+  .witness-table input {
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0.375rem 0.5rem;
+  }
+
+  .witness-table input:focus {
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+  }
+
+  .witness-table select {
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--border);
+    border-radius: 0;
+    padding: 0.375rem 0.25rem;
+    background: transparent;
+  }
+
+  .add-row-btn {
+    background: none;
+    border: 1px dashed var(--border);
+    color: var(--slate);
+    padding: 0.375rem 0.75rem;
+    font-size: 0.8125rem;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    transition: all 0.15s;
+  }
+
+  .add-row-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Doc type checkboxes */
+  .doc-types {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+
+  .doc-type-option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .doc-type-option:hover { border-color: var(--accent); }
+  .doc-type-option input:checked ~ span { color: var(--accent); font-weight: 600; }
+  .doc-type-option input { accent-color: var(--accent); }
+  .doc-type-option span { font-size: 0.875rem; }
+
+  /* Engine hint */
+  .engine-hint {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin-top: 0.25rem;
+  }
+
+  /* Submit area */
+  .submit-area {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-top: 2rem;
+  }
+
+  .btn-primary {
+    background: var(--navy);
+    color: var(--white);
+    border: none;
+    padding: 0.75rem 2rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .btn-primary:hover { background: var(--accent-hover); }
+
+  .btn-secondary {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--slate);
+    padding: 0.625rem 1.25rem;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .btn-secondary:hover { border-color: var(--slate); }
+
+  .submit-note {
+    font-size: 0.8125rem;
+    color: var(--slate);
+    margin-left: auto;
+  }
+
+  /* Print */
+  @media print {
+    body { background: white; }
+    .container { padding: 0; max-width: 100%; }
+    section { break-inside: avoid; border: 1px solid #ddd; }
+    .btn-primary, .btn-secondary, .submit-note { display: none; }
+  }
+
+  /* Mobile */
+  @media (max-width: 640px) {
+    .row-2, .row-3, .row-2-1, .row-1-2 { grid-template-columns: 1fr; }
+    .top-row, .top-row-second { grid-template-columns: 1fr; }
+    .doc-types { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+<header>
+  <h1>Case Intake — Discovery Response Automation</h1>
+  <p>Complete before running the discovery engine. Fields left blank will be prompted during processing.</p>
+</header>
+
+<div class="top-row">
+  <div class="field">
+    <label for="case_name">Case Name</label>
+    <input type="text" id="case_name" placeholder="e.g., Kobrin v. State Farm">
+  </div>
+  <div class="field">
+    <label for="date">Date</label>
+    <input type="date" id="date">
+  </div>
+</div>
+<div class="top-row-second">
+  <div class="field">
+    <label for="attorney">Attorney</label>
+    <input type="text" id="attorney">
+  </div>
+  <div class="field">
+    <label for="paralegal">Paralegal</label>
+    <input type="text" id="paralegal" placeholder="Optional">
+  </div>
+</div>
+
+<!-- 1. Matter Type -->
+<section>
+  <h2><span class="num">1</span> Matter Type</h2>
+  <div class="field">
+    <label>Proceeding</label>
+    <div class="option-group">
+      <label><input type="radio" name="matter_type" value="litigation" checked> Litigation (Superior Court)</label>
+      <label><input type="radio" name="matter_type" value="uim_arbitration"> UIM Arbitration</label>
+      <label><input type="radio" name="matter_type" value="other"> Other</label>
+    </div>
+  </div>
+  <div class="row row-2" style="margin-top: 0.875rem;">
+    <div class="field">
+      <label for="party_designation">Our client is</label>
+      <select id="party_designation">
+        <option value="plaintiff">Plaintiff</option>
+        <option value="claimant">Claimant</option>
+        <option value="cross_complainant">Cross-Complainant</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="opposing_designation">Opposing party is</label>
+      <select id="opposing_designation">
+        <option value="defendant">Defendant</option>
+        <option value="respondent">Respondent</option>
+        <option value="cross_defendant">Cross-Defendant</option>
+      </select>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Incident -->
+<section>
+  <h2><span class="num">2</span> Incident</h2>
+  <div class="row row-3">
+    <div class="field">
+      <label for="incident_date">Date of Incident</label>
+      <input type="date" id="incident_date">
+    </div>
+    <div class="field">
+      <label>Case Type</label>
+      <select id="case_type">
+        <option value="auto">Auto</option>
+        <option value="premises">Premises Liability</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="incident_location">Location</label>
+      <input type="text" id="incident_location" placeholder="Intersection / address">
+    </div>
+  </div>
+  <div class="field">
+    <label for="incident_summary">One-line description</label>
+    <input type="text" id="incident_summary" placeholder="e.g., Rear-end collision at red light on Sepulveda Blvd.">
+  </div>
+</section>
+
+<!-- 3. Injuries & Medical -->
+<section>
+  <h2><span class="num">3</span> Injuries &amp; Medical</h2>
+  <div class="field">
+    <label for="body_parts">Body parts claimed <span class="hint">— list all; drives prior-history cross-reference</span></label>
+    <input type="text" id="body_parts" placeholder="e.g., left wrist, lower back, cervical spine">
+  </div>
+
+  <div class="field">
+    <label>Ongoing complaints?</label>
+    <div class="yn-group">
+      <input type="radio" name="ongoing" id="ongoing_yes" value="yes">
+      <label for="ongoing_yes">Yes</label>
+      <input type="radio" name="ongoing" id="ongoing_no" value="no">
+      <label for="ongoing_no">No</label>
+    </div>
+    <div class="conditional" id="ongoing_detail">
+      <div class="field">
+        <label for="ongoing_summary">Brief summary of current complaints</label>
+        <textarea id="ongoing_summary" rows="2" placeholder="e.g., Chronic pain in left wrist, limited grip strength, difficulty with daily tasks"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Prior treatment to same body parts?</label>
+    <div class="yn-group">
+      <input type="radio" name="prior_treatment" id="prior_yes" value="yes">
+      <label for="prior_yes">Yes</label>
+      <input type="radio" name="prior_treatment" id="prior_no" value="no">
+      <label for="prior_no">No</label>
+      <input type="radio" name="prior_treatment" id="prior_unknown" value="unknown">
+      <label for="prior_unknown">Unknown</label>
+    </div>
+    <div class="conditional" id="prior_detail">
+      <div class="field">
+        <label for="prior_summary">Which body parts and approximate dates</label>
+        <input type="text" id="prior_summary" placeholder="e.g., Lower back — chiropractic care 2019-2020">
+      </div>
+    </div>
+  </div>
+
+  <div class="field">
+    <label>Unrelated prescriptions or conditions to protect?</label>
+    <div class="yn-group">
+      <input type="radio" name="unrelated_meds" id="meds_yes" value="yes">
+      <label for="meds_yes">Yes</label>
+      <input type="radio" name="unrelated_meds" id="meds_no" value="no">
+      <label for="meds_no">No</label>
+    </div>
+    <p class="engine-hint">If yes, 2.13 and medical-history objections will be elevated (Hallendorf / privacy).</p>
+  </div>
+</section>
+
+<!-- 4. Insurance -->
+<section>
+  <h2><span class="num">4</span> Insurance</h2>
+  <div class="row row-2">
+    <div class="field">
+      <label for="auto_carrier">Auto Policy — Carrier</label>
+      <input type="text" id="auto_carrier">
+    </div>
+    <div class="field">
+      <label for="auto_policy">Policy #</label>
+      <div style="display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" id="auto_policy" style="flex: 1;">
+        <label style="display: inline-flex; align-items: center; gap: 0.25rem; margin: 0; white-space: nowrap; font-weight: 400; font-size: 0.8125rem;">
+          <input type="checkbox" id="per_policy"> Per Policy
+        </label>
+      </div>
+    </div>
+  </div>
+  <div class="row row-2">
+    <div class="field">
+      <label for="health_carrier">Health Insurance — Carrier</label>
+      <input type="text" id="health_carrier" placeholder="or 'None'">
+    </div>
+    <div class="field">
+      <label>Medicare / Medi-Cal / Supplement</label>
+      <div class="option-group">
+        <label><input type="checkbox" id="medicare"> Medicare</label>
+        <label><input type="checkbox" id="medical"> Medi-Cal</label>
+        <label><input type="checkbox" id="supplement"> Supplement</label>
+        <label><input type="checkbox" id="ins_na"> N/A</label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5. Employment & Wage Loss -->
+<section>
+  <h2><span class="num">5</span> Employment &amp; Wage Loss</h2>
+  <div class="field">
+    <label>Claiming lost wages?</label>
+    <div class="yn-group">
+      <input type="radio" name="wage_loss" id="wage_yes" value="yes">
+      <label for="wage_yes">Yes</label>
+      <input type="radio" name="wage_loss" id="wage_no" value="no">
+      <label for="wage_no">No</label>
+    </div>
+  </div>
+
+  <div class="conditional" id="wage_yes_detail">
+    <div class="row row-2">
+      <div class="field">
+        <label for="employer">Employer / Business</label>
+        <input type="text" id="employer">
+      </div>
+      <div class="field">
+        <label for="income_type">Income Type</label>
+        <select id="income_type">
+          <option value="">Select...</option>
+          <option value="w2">W-2</option>
+          <option value="self_employed">Self-Employed</option>
+          <option value="1099">1099 Contractor</option>
+          <option value="professional">Professional Practice</option>
+        </select>
+      </div>
+    </div>
+    <div class="row row-3">
+      <div class="field">
+        <label for="monthly_income">Approx. Monthly Income</label>
+        <input type="text" id="monthly_income" placeholder="$">
+      </div>
+      <div class="field">
+        <label for="wage_from">Lost Wages From</label>
+        <input type="date" id="wage_from">
+      </div>
+      <div class="field">
+        <label for="wage_to">Through</label>
+        <input type="date" id="wage_to">
+      </div>
+    </div>
+  </div>
+
+  <div class="conditional" id="wage_no_detail">
+    <div class="field">
+      <label>Client is employed but not claiming wages — disclose employment in 8.x?</label>
+      <div class="yn-group">
+        <input type="radio" name="disclose_employment" id="disclose_yes" value="yes">
+        <label for="disclose_yes">Yes, disclose basics</label>
+        <input type="radio" name="disclose_employment" id="disclose_no" value="no">
+        <label for="disclose_no">Object only</label>
+      </div>
+      <p class="engine-hint">If "disclose basics," engine will reference 2.6 employment info in 8.x with no-wage-claim statement.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Liability -->
+<section>
+  <h2><span class="num">6</span> Liability</h2>
+  <div class="field">
+    <label for="liability_theory">Theory of liability <span class="hint">— who did what wrong</span></label>
+    <textarea id="liability_theory" rows="3" placeholder="e.g., Defendant failed to stop at a red light and collided with Plaintiff's vehicle in the intersection of..."></textarea>
+  </div>
+  <div class="field">
+    <label>Comparative fault</label>
+    <div class="option-group">
+      <label><input type="radio" name="comp_fault" value="none" checked> None alleged</label>
+      <label><input type="radio" name="comp_fault" value="disputed"> Disputed</label>
+    </div>
+    <div class="conditional" id="comp_fault_detail">
+      <div class="field">
+        <label for="comp_fault_explain">Explain</label>
+        <input type="text" id="comp_fault_explain">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Witnesses -->
+<section>
+  <h2><span class="num">7</span> Witnesses</h2>
+  <p class="engine-hint" style="margin-bottom: 0.75rem;">Contact info not needed here — engine pulls from documents or asks during processing.</p>
+  <table class="witness-table">
+    <thead>
+      <tr>
+        <th style="width: 45%;">Name</th>
+        <th style="width: 45%;">Role</th>
+        <th style="width: 10%;"></th>
+      </tr>
+    </thead>
+    <tbody id="witness-body">
+      <tr>
+        <td><input type="text" name="witness_name[]" placeholder="Full name"></td>
+        <td>
+          <select name="witness_role[]">
+            <option value="">Select role...</option>
+            <option value="eyewitness">Eyewitness</option>
+            <option value="treating">Treating Physician</option>
+            <option value="expert">Expert</option>
+            <option value="employer">Employer</option>
+            <option value="other">Other</option>
+          </select>
+        </td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><input type="text" name="witness_name[]" placeholder="Full name"></td>
+        <td>
+          <select name="witness_role[]">
+            <option value="">Select role...</option>
+            <option value="eyewitness">Eyewitness</option>
+            <option value="treating">Treating Physician</option>
+            <option value="expert">Expert</option>
+            <option value="employer">Employer</option>
+            <option value="other">Other</option>
+          </select>
+        </td>
+        <td></td>
+      </tr>
+      <tr>
+        <td><input type="text" name="witness_name[]" placeholder="Full name"></td>
+        <td>
+          <select name="witness_role[]">
+            <option value="">Select role...</option>
+            <option value="eyewitness">Eyewitness</option>
+            <option value="treating">Treating Physician</option>
+            <option value="expert">Expert</option>
+            <option value="employer">Employer</option>
+            <option value="other">Other</option>
+          </select>
+        </td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <button type="button" class="add-row-btn" onclick="addWitnessRow()">+ Add witness</button>
+</section>
+
+<!-- 8. Quick Flags -->
+<section>
+  <h2><span class="num">8</span> Quick Flags</h2>
+  <div class="row row-3">
+    <div class="field">
+      <label>Felony history?</label>
+      <div class="yn-group">
+        <input type="radio" name="felony" id="felony_yes" value="yes">
+        <label for="felony_yes">Yes</label>
+        <input type="radio" name="felony" id="felony_no" value="no">
+        <label for="felony_no">No</label>
+      </div>
+      <p class="engine-hint">Drives 2.8 objection level</p>
+    </div>
+    <div class="field">
+      <label>Prior lawsuits?</label>
+      <div class="yn-group">
+        <input type="radio" name="prior_suits" id="suits_yes" value="yes">
+        <label for="suits_yes">Yes</label>
+        <input type="radio" name="prior_suits" id="suits_no" value="no">
+        <label for="suits_no">No</label>
+      </div>
+      <p class="engine-hint">Drives 2.9–2.11 responses</p>
+    </div>
+    <div class="field">
+      <label>Other counsel?</label>
+      <div class="yn-group">
+        <input type="radio" name="other_counsel" id="counsel_yes" value="yes">
+        <label for="counsel_yes">Yes</label>
+        <input type="radio" name="other_counsel" id="counsel_no" value="no">
+        <label for="counsel_no">No</label>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Document Types -->
+<section>
+  <h2><span class="num">9</span> Document Types to Produce</h2>
+  <div class="doc-types">
+    <label class="doc-type-option">
+      <input type="checkbox" name="doc_type[]" value="fi">
+      <span>Form Interrogatories</span>
+    </label>
+    <label class="doc-type-option">
+      <input type="checkbox" name="doc_type[]" value="si">
+      <span>Special Interrogatories</span>
+    </label>
+    <label class="doc-type-option">
+      <input type="checkbox" name="doc_type[]" value="rfp">
+      <span>Requests for Production</span>
+    </label>
+    <label class="doc-type-option">
+      <input type="checkbox" name="doc_type[]" value="rfa">
+      <span>Requests for Admission</span>
+    </label>
+  </div>
+</section>
+
+<div class="submit-area">
+  <button type="button" class="btn-primary" onclick="exportJSON()">Export as JSON</button>
+  <button type="button" class="btn-secondary" onclick="window.print()">Print</button>
+  <span class="submit-note">Exports to case_context.json for engine processing</span>
+</div>
+
+</div>
+
+<script>
+// Conditional visibility toggles
+function toggle(radioName, value, targetId) {
+  document.querySelectorAll(`input[name="${radioName}"]`).forEach(r => {
+    r.addEventListener('change', () => {
+      const el = document.getElementById(targetId);
+      if (el) el.classList.toggle('visible', r.value === value && r.checked);
+    });
+  });
+}
+
+toggle('ongoing', 'yes', 'ongoing_detail');
+toggle('prior_treatment', 'yes', 'prior_detail');
+toggle('wage_loss', 'yes', 'wage_yes_detail');
+toggle('wage_loss', 'no', 'wage_no_detail');
+
+// Comparative fault conditional
+document.querySelectorAll('input[name="comp_fault"]').forEach(r => {
+  r.addEventListener('change', () => {
+    document.getElementById('comp_fault_detail').classList.toggle('visible', r.value === 'disputed' && r.checked);
+  });
+});
+
+// Add witness row
+function addWitnessRow() {
+  const tbody = document.getElementById('witness-body');
+  const row = document.createElement('tr');
+  row.innerHTML = `
+    <td><input type="text" name="witness_name[]" placeholder="Full name"></td>
+    <td>
+      <select name="witness_role[]">
+        <option value="">Select role...</option>
+        <option value="eyewitness">Eyewitness</option>
+        <option value="treating">Treating Physician</option>
+        <option value="expert">Expert</option>
+        <option value="employer">Employer</option>
+        <option value="other">Other</option>
+      </select>
+    </td>
+    <td><button type="button" onclick="this.closest('tr').remove()" style="background:none;border:none;color:#94a3b8;cursor:pointer;font-size:1.1rem;">&times;</button></td>
+  `;
+  tbody.appendChild(row);
+}
+
+// Export to case_context.json structure
+function exportJSON() {
+  const val = id => document.getElementById(id)?.value || '';
+  const checked = name => document.querySelector(`input[name="${name}"]:checked`)?.value || '';
+  const isChecked = id => document.getElementById(id)?.checked || false;
+
+  const witnesses = [];
+  const names = document.querySelectorAll('input[name="witness_name[]"]');
+  const roles = document.querySelectorAll('select[name="witness_role[]"]');
+  names.forEach((n, i) => {
+    if (n.value.trim()) {
+      witnesses.push({ name: n.value.trim(), role: roles[i]?.value || '' });
+    }
+  });
+
+  const docTypes = [];
+  document.querySelectorAll('input[name="doc_type[]"]:checked').forEach(cb => docTypes.push(cb.value));
+
+  const context = {
+    case_name: val('case_name'),
+    date_prepared: val('date'),
+    prepared_by: [val('attorney'), val('paralegal')].filter(Boolean).join(' / '),
+    matter_type: checked('matter_type'),
+    party_designation: val('party_designation'),
+    opposing_designation: val('opposing_designation'),
+    case_type: val('case_type'),
+    incident: {
+      date: val('incident_date'),
+      location: val('incident_location'),
+      summary: val('incident_summary')
+    },
+    injuries: {
+      body_parts: val('body_parts'),
+      ongoing_complaints: checked('ongoing') === 'yes',
+      ongoing_summary: val('ongoing_summary'),
+      prior_treatment: checked('prior_treatment'),
+      prior_summary: val('prior_summary'),
+      unrelated_conditions_to_protect: checked('unrelated_meds') === 'yes'
+    },
+    insurance: {
+      auto_carrier: val('auto_carrier'),
+      auto_policy: isChecked('per_policy') ? 'Per Policy' : val('auto_policy'),
+      health_carrier: val('health_carrier'),
+      medicare: isChecked('medicare'),
+      medi_cal: isChecked('medical'),
+      supplement: isChecked('supplement')
+    },
+    wage_loss: {
+      claiming: checked('wage_loss') === 'yes',
+      employer: val('employer'),
+      income_type: val('income_type'),
+      monthly_income: val('monthly_income'),
+      period_from: val('wage_from'),
+      period_to: val('wage_to'),
+      disclose_if_not_claiming: checked('disclose_employment')
+    },
+    liability: {
+      theory: val('liability_theory'),
+      comparative_fault: checked('comp_fault'),
+      comparative_fault_detail: val('comp_fault_explain')
+    },
+    witnesses: witnesses,
+    flags: {
+      felony_history: checked('felony') === 'yes',
+      prior_lawsuits: checked('prior_suits') === 'yes',
+      other_counsel: checked('other_counsel') === 'yes'
+    },
+    document_types: docTypes
+  };
+
+  const blob = new Blob([JSON.stringify(context, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'case_context.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Auto-set today's date
+document.getElementById('date').valueAsDate = new Date();
+</script>
+
+</body>
+</html>
