@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Proposal: User-Editable Case Context Document</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    max-width: 740px;
+    margin: 0 auto;
+    padding: 2rem 1.5rem 4rem;
+    color: #1e293b;
+    line-height: 1.6;
+    background: #f8fafc;
+  }
+  h1 { font-size: 1.5rem; color: #1a2744; border-bottom: 3px solid #1a2744; padding-bottom: 0.75rem; }
+  h2 { font-size: 1.2rem; color: #1a2744; margin-top: 2rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.4rem; }
+  h3 { font-size: 1rem; color: #475569; margin-top: 1.25rem; }
+  p, li { font-size: 0.9375rem; }
+  code { background: #e2e8f0; padding: 0.15em 0.4em; border-radius: 3px; font-size: 0.85em; }
+  pre { background: #1e293b; color: #e2e8f0; padding: 1rem 1.25rem; border-radius: 6px; overflow-x: auto; font-size: 0.85rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  strong { color: #1a2744; }
+  a { color: #2563eb; }
+  hr { border: none; border-top: 1px solid #cbd5e1; margin: 2rem 0; }
+  ul, ol { padding-left: 1.5rem; }
+  li { margin-bottom: 0.35rem; }
+  @media print { body { background: white; } }
+</style>
+</head>
+<body>
+<h1>Proposal: User-Editable Case Context Document</h1>
+<p><strong>From:</strong> Karl
+<strong>To:</strong> Lucas
+<strong>Date:</strong> 2026-03-02
+<strong>Re:</strong> Adding a human-in-the-loop document between document ingestion and response drafting</p>
+<hr>
+<h2>The Idea</h2>
+<p>Right now the skill&#39;s Stage 2 (Clarifying Questions) works as a back-and-forth conversation: Claude reads the case documents, figures out what it knows and doesn&#39;t know, then asks the attorney questions to fill gaps. The answers go into <code>case_context.json</code>, which Stage 3 reads as its source of truth for drafting.</p>
+<p>The proposal: replace that conversational Q&amp;A with a <strong>user-editable document</strong> that Claude pre-populates from whatever it harvests from the case documents, then hands to the attorney to review, correct, and supplement before processing continues.</p>
+<p>The flow becomes:</p>
+<pre><code>[Case Documents]
+      │
+      ▼
+  Claude ingests &amp; extracts
+      │
+      ▼
+[Pre-filled Intake Document]  ← attorney reviews, edits, fills gaps
+      │
+      ▼
+  Claude reads back as source of truth
+      │
+      ▼
+[Draft Responses]
+</code></pre>
+<p>Instead of:</p>
+<pre><code>[Case Documents]
+      │
+      ▼
+  Claude ingests
+      │
+      ▼
+  Claude asks Q1 → attorney answers → Claude asks Q2 → attorney answers → ...
+      │
+      ▼
+  case_context.json (invisible to attorney)
+      │
+      ▼
+[Draft Responses]
+</code></pre>
+<p>I&#39;ve mocked up what the intake document looks like as both a printable markdown sheet and a web form:</p>
+<ul>
+<li><strong>Web form (live):</strong> <a href="https://karl-kahn.github.io/case-intake-form/">https://karl-kahn.github.io/case-intake-form/</a></li>
+<li><strong>Markdown version:</strong> <code>cases/gsdat-docs/CASE_INTAKE_SHEET.md</code></li>
+</ul>
+<p>The web form has an &quot;Export as JSON&quot; button that produces a <code>case_context.json</code> the engine can already consume. But the format of the editable doc itself (web form, markdown, Word, whatever) is an implementation detail — the point is the pattern.</p>
+<hr>
+<h2>What We Gain</h2>
+<h3>1. Attorney can review everything at once</h3>
+<p>The conversational Q&amp;A is linear — you answer one question, then the next, and you can&#39;t easily go back. A document lets the attorney see the full picture, spot inconsistencies, and edit anything in any order. Jeff is a litigator; he reviews documents, he doesn&#39;t do chat workflows.</p>
+<h3>2. Claude&#39;s extractions become auditable</h3>
+<p>Right now if Claude misreads a police report or gets an injury list wrong, the attorney only catches it when reviewing the final drafted responses — at which point it&#39;s harder to trace back to the source. With an intermediate document, the attorney sees &quot;Claude thinks the injuries are X, Y, Z&quot; and can correct it <em>before</em> 20 responses get drafted wrong.</p>
+<h3>3. Gaps are visible up front</h3>
+<p>If Claude can&#39;t find wage records or doesn&#39;t know if there&#39;s a Medicare layer, the intermediate document shows those as blank fields. The attorney fills them in or marks them as N/A. No back-and-forth, no &quot;I need more information&quot; loops.</p>
+<h3>4. The document persists and accumulates</h3>
+<p><code>case_context.json</code> already supports reuse across doc types (do FI first, then SI reuses the same context). The editable document makes this explicit — it&#39;s a case cover sheet that grows as the attorney works through different doc types. New sessions read it back, only ask about what&#39;s new.</p>
+<h3>5. It works offline</h3>
+<p>An attorney or paralegal can fill out the intake sheet on paper, on a plane, between court appearances. They don&#39;t need Claude running. When they come back, they hand the completed sheet to the skill and say &quot;go.&quot;</p>
+<hr>
+<h2>What We Lose (and whether it matters)</h2>
+<h3>1. Adaptive follow-up questions</h3>
+<p>The conversational Q&amp;A can ask smart follow-ups: &quot;You said no wage loss — but you disclosed employment in 2.6. Should 8.x reference that?&quot; A static form can&#39;t do this.</p>
+<p><strong>Mitigation:</strong> The form can be a <em>first pass</em>. After Claude reads the completed form, it can still ask a short list of targeted follow-ups based on what the attorney wrote. The difference is those follow-ups are 2-3 questions instead of 15, and they&#39;re informed by what&#39;s already on the form. Think of it as: form handles the 80% that&#39;s mechanical, Claude handles the 20% that needs judgment.</p>
+<h3>2. Cross-reference intelligence</h3>
+<p>Claude currently does things like &quot;extract body parts from 6.2, search medical records for pre-accident complaints to the same body parts, then draft 10.x.&quot; An intake form can ask &quot;prior treatment to same body parts?&quot; but it can&#39;t do the cross-reference work.</p>
+<p><strong>Mitigation:</strong> This is engine logic, not intake logic. The form captures the attorney&#39;s knowledge (&quot;yes, prior lower back treatment 2019-2020&quot;). Claude still does the cross-referencing during Stage 3 processing. The form doesn&#39;t replace the engine&#39;s intelligence — it replaces the <em>data collection</em>.</p>
+<h3>3. JSON structure</h3>
+<p>The current <code>case_context.json</code> is structured data with nested objects, arrays, and typed fields. A human-editable document is inherently less structured.</p>
+<p><strong>Mitigation:</strong> The editable document is the <em>input</em>. Claude reads it and writes <code>case_context.json</code> from it — same as it does today from conversational answers. The schema doesn&#39;t change. The form just becomes a friendlier front door to the same data.</p>
+<h3>4. Per-doc-type scoping</h3>
+<p>The current Q&amp;A only asks questions relevant to the selected document type (FI needs different context than SI). A single intake form asks everything.</p>
+<p><strong>Mitigation:</strong> This is actually fine. The form is short (one page). Asking a few questions that don&#39;t apply to this particular doc type costs the attorney 10 seconds of skipping. And the answers persist — so when they come back for the next doc type, those fields are already filled.</p>
+<hr>
+<h2>What This Means for the Skill Architecture</h2>
+<h3>Changes needed</h3>
+<ol>
+<li><p><strong>New stage between Stage 1 and Stage 2:</strong> After <code>scan_case.py</code> inventories the folder and Claude ingests the documents, Claude writes a pre-filled intake document (populating what it can from documents, leaving blanks for what it can&#39;t).</p>
+</li>
+<li><p><strong>Stage 2 shrinks:</strong> Instead of a full Q&amp;A session, Stage 2 becomes: &quot;Read the completed intake form → write <code>case_context.json</code> → ask 2-3 targeted follow-ups if needed → proceed.&quot;</p>
+</li>
+<li><p><strong><code>case_context_schema.md</code> needs new fields:</strong> The intake form I mocked up adds fields the current schema doesn&#39;t have:</p>
+<ul>
+<li><code>matter_type</code> (litigation / UIM arbitration / other)</li>
+<li><code>party_designation</code> (Plaintiff / Claimant / Cross-Complainant)</li>
+<li><code>opposing_designation</code> (Defendant / Respondent / Cross-Defendant)</li>
+<li><code>insurance.medicare</code>, <code>insurance.medi_cal</code>, <code>insurance.supplement</code></li>
+<li><code>flags.felony_history</code>, <code>flags.prior_lawsuits</code>, <code>flags.other_counsel</code></li>
+<li><code>flags.unrelated_conditions_to_protect</code> (triggers 2.13 escalation)</li>
+<li><code>wage_loss.disclose_if_not_claiming</code> (Kobrin&#39;s &quot;third path&quot;)</li>
+</ul>
+<p>These all came out of the Kobrin case review — see <code>LOGIC_REVIEW.md</code> for the full analysis.</p>
+</li>
+<li><p><strong>Intake form format:</strong> The web form is a mockup. In practice, the &quot;editable document&quot; could be:</p>
+<ul>
+<li>A markdown file Claude generates and the attorney edits in any text editor</li>
+<li>A web form (if we build a lightweight UI)</li>
+<li>A Word document (since Jeff already works in Word)</li>
+<li>A JSON file with good comments (if the attorney is comfortable with that)</li>
+</ul>
+<p>My recommendation: start with markdown. It&#39;s readable, editable anywhere, and Claude can read it back trivially. If Jeff wants something fancier, the web form is ready to go.</p>
+</li>
+</ol>
+<h3>What doesn&#39;t change</h3>
+<ul>
+<li><code>assemble.py</code> (template-fill engine) — untouched, still reads <code>responses.json</code></li>
+<li><code>ingest.py</code> (PDF ingestion) — untouched</li>
+<li><code>tag_responses.py</code> (completeness validation) — untouched</li>
+<li>Reference files (objections, patterns, interpretation guide) — untouched</li>
+<li>The responses.json schema — untouched</li>
+<li>Stage 3 processing logic — reads <code>case_context.json</code> same as before</li>
+</ul>
+<p>The intake form is purely a change to how <code>case_context.json</code> gets populated. Everything downstream is the same.</p>
+<hr>
+<h2>Net Assessment</h2>
+<p>We lose very little. The conversational Q&amp;A&#39;s advantages (adaptive follow-ups, per-doc-type scoping) are preserved by keeping a short follow-up step after the form is read back. Everything else about the form approach is strictly better: more auditable, more portable, faster for the attorney, and it makes Claude&#39;s document extraction visible and correctable before it compounds into 20+ drafted responses.</p>
+<p>The implementation lift is modest — it&#39;s mostly a change to SKILL.md&#39;s Stage 2 instructions and a schema update to <code>case_context_schema.md</code>. The scripts and engine don&#39;t change.</p>
+<hr>
+<h2>Attachments</h2>
+<ul>
+<li><code>cases/gsdat-docs/CASE_INTAKE_SHEET.md</code> — the one-page markdown intake form</li>
+<li><code>cases/gsdat-docs/case_intake_form.html</code> — interactive web form mockup (also live at <a href="https://karl-kahn.github.io/case-intake-form/">https://karl-kahn.github.io/case-intake-form/</a>)</li>
+<li><code>cases/gsdat-docs/LOGIC_REVIEW.md</code> — the 23-item review that surfaced the new fields needed</li>
+</ul>
+</body></html>
